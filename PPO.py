@@ -197,7 +197,6 @@ class PPO:
         # return action.item()
 
     def update(self):
-        print('updating')
         # Monte Carlo estimate of returns
         rewards = []
         discounted_reward = 0

@@ -13,7 +13,7 @@ from Tool.GetHP import Hp_getter
 from Tool.FrameBuffer import FrameBuffer
 from CPC.tools import Buffer, SimSiam
 
-K_epochs = 80  # update policy for K epochs in one PPO update
+K_epochs = 200  # update policy for K epochs in one PPO update
 eps_clip = 0.2  # clip parameter for PPO
 gamma = 0.99  # discount factor
 
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     if os.path.exists(os.path.join('model', 'simsiam_best.pkl')):
         simsiam = torch.load(os.path.join('model', 'simsiam_best.pkl'))
         encoder = simsiam.encoder
-        print('Load model successfully.')
+        print('Loading Encoder Network successfully.')
         train_cpc = input("Whether to train CPC?")
         if not train_cpc:
             warm_up_epoch = 0
@@ -100,42 +100,47 @@ if __name__ == '__main__':
         simsiam = SimSiam(encoder, state_dim, pred_dim)
 
     # encoder = torch.load(os.path.join('model', 'encoder_best.pkl'))
-
     simsiam = simsiam.cuda()
     encoder = encoder.cuda()
     img_buffer = Buffer(_max_replay_buffer_size=50)
-    agent = Agent(encoder, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std)
     writer = SummaryWriter()
+
+    agent = Agent(encoder, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std)
+
+    # agent.algorithm.load(os.path.join('model', 'simsiam_best.pkl'))
+
     init_point = getter.get_play_location()
 
-    epoch = 0
     best_loss = 999
-    if warm_up_epoch:
-        print("Start Collecting Samples for CPC")
-        while epoch < warm_up_epoch:
-            run_episode(getter, agent, buffer=img_buffer)
-            loss = warm_up_cpc(simsiam, img_buffer,
-                               epoch=epoch, warm_up_episode=warm_up_episode, writer=writer)
-            print('CPC Epoch %s: loss = %s' % (epoch, loss))
-            epoch += 1
-            if loss < best_loss:
-                best_loss = loss
-                torch.save(simsiam, os.path.join('model', 'simsiam_best.pkl'))
-                torch.save(encoder, os.path.join('model', 'encoder_best.pkl'))
-                print('Best loss update: ', loss)
-        print("Warmed up CPC for %s episodes" % str(epoch * warm_up_episode))
-        del img_buffer
-
-    print("Start training PPO")
     episode = 0
+
+    print('Training CPC = ', bool(warm_up_epoch))
+    if warm_up_epoch:
+        print('Warm up epoch =', warm_up_epoch,end='; ')
+        print('Episodes for each epoch =', warm_up_episode)
+
     while episode < 30000:
         # print('start one episode')
         episode += 1
-        total_reward, total_step, done = run_episode(getter, agent)
+        total_reward, total_step, done = run_episode(getter, agent, buffer=img_buffer)
+
         writer.add_scalar('Hornet' + ' /' + 'Reward', total_reward, episode)
         writer.add_scalar('Hornet' + ' /' + 'Win', max(0, done), episode)
         print("Episode: ", episode, ", Reward: ", total_reward, end=", ")
         print('Win!') if done == 1 else print()
-        if episode % 3 == 0:
+
+        if episode < warm_up_epoch:
+            loss = warm_up_cpc(simsiam, img_buffer,
+                               epoch=episode, warm_up_episode=warm_up_episode, writer=writer)
+            print('CPC Epoch %s: loss = %s' % (episode, loss))
+            if loss < best_loss:
+                best_loss = loss
+                torch.save(simsiam, os.path.join('model', 'simsiam_best.pkl'))
+                torch.save(encoder, os.path.join('model', 'encoder_best.pkl'))
+                print('Best CPC Loss update: ', loss)
+
+        if episode % 2 == 0:
+            print("Training PPO...")
             agent.update()
-        time.sleep(3.2)
+            if episode % 10 == 0:
+                agent.algorithm.save('model', episode)
