@@ -11,22 +11,28 @@ from CPC.tools import FrameDataset, GaussianBlur, TwoCropsTransform, SimSiam, Bu
 momentum = 0.9
 weight_decay = 1e-4
 batch_size = 32
-lr = 0.3
+lr = 0.05
 init_lr = lr * batch_size / 256
 
 # normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
 #                                  std=[0.229, 0.224, 0.225])
+def to_tensor(pic):
+    default_float_dtype = torch.get_default_dtype()
+    img = torch.from_numpy(pic).contiguous()
+    # backward compatibility
+    if isinstance(img, torch.ByteTensor):
+        return img.to(dtype=default_float_dtype).div(255)
+    else:
+        return img
+
+
 
 augmentation = [
-    transforms.ToTensor(),
+    to_tensor,
     # transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
-
     transforms.RandomApply([transforms.GaussianBlur(3, [.1, 2.])], p=0.5),
-
     transforms.RandomResizedCrop((2, 160), scale=(0.2, 1.)),
-    transforms.RandomSolarize(0.2, p=0.5),
     transforms.Normalize(mean=[0.445], std=[0.227])
-
 ]
 
 
@@ -72,7 +78,7 @@ def warm_up_cpc(simsiam, img_buffer, epoch=0, warm_up_episode=5000, writer=None)
                                 momentum=momentum,
                                 weight_decay=weight_decay)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True, drop_last=False)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True, drop_last=True)
     criterion = nn.CosineSimilarity(dim=1).cuda()
     total_episode = epoch * warm_up_episode
     losses = 0
@@ -92,10 +98,10 @@ def warm_up_cpc(simsiam, img_buffer, epoch=0, warm_up_episode=5000, writer=None)
 if __name__ == "__main__":
     state_dim = 256
     pred_dim = 64
-    encoder = ResEncoder(in_channels=1, out_dims=state_dim)
+    encoder = ResEncoder(in_channels=4, out_dims=state_dim).cuda()
     simsiam = SimSiam(encoder, state_dim, pred_dim).cuda()
     img_buffer = Buffer(_max_replay_buffer_size=3000)
-    img_buffer.append(np.ones((80, 160)))
-    img_buffer.append(np.ones((80, 160)))
+    for i in range(50):
+        img_buffer.append(np.ones((80, 160)))
 
     warm_up_cpc(simsiam, img_buffer)

@@ -1,16 +1,19 @@
 import torch
 import torch.nn as nn
-
+import numpy as np
 from torch.utils.data import ConcatDataset, Dataset
 from PIL import ImageFilter
 import random
 
 
 class Buffer:
-    def __init__(self, _max_replay_buffer_size=300):
+    def __init__(self, _length=4, _stride=4, _max_replay_buffer_size=300):
         self.buffer = []
         self._max_replay_buffer_size = _max_replay_buffer_size
         self._top = 0
+        self._length = _length
+        self._stride = _stride
+        self._init()
 
     def append(self, x):
         if self.__len__() < self._max_replay_buffer_size:
@@ -21,11 +24,25 @@ class Buffer:
             self.buffer[self._top] = x
             self._top = (self._top + 1) % self._max_replay_buffer_size
 
-    def __getitem__(self, index):
-        return self.buffer[index]
+    def get_stack(self, top=None, length=None, stride=None):
+        if top is None:
+            top = self._top
+        if length is None:
+            top = self._length
+        if stride is None:
+            top = self._stride
+        stack = []
+        for i in range(self._length):
+            pointer = top - i * self._stride
+            pointer = pointer + self._max_replay_buffer_size if pointer < 0 else pointer
+            stack.append(self.buffer[pointer][np.newaxis, :, :])
+        return np.concatenate(stack)
 
-    def __setitem__(self, index):
-        return self.buffer[index]
+    def _init(self):
+        self.buffer = [np.zeros((80, 160))] * self._max_replay_buffer_size
+
+    def __getitem__(self, index):
+        return self.get_stack(index)
 
     def __len__(self):
         return len(self.buffer)

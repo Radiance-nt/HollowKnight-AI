@@ -19,8 +19,9 @@ class Agent:
 
     def sample_action(self, obs):
         if not isinstance(obs, torch.Tensor):
+            obs = torch.Tensor(obs)
             if len(obs.shape) < 3:
-                obs = torch.Tensor(obs).unsqueeze(0)
+                obs = obs.unsqueeze(0)
             obs = obs.unsqueeze(0)
         obs = obs.cuda()
         with torch.no_grad():

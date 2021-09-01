@@ -21,7 +21,7 @@ from Tool.Actions import take_action, restart,take_direction, TackAction
 from Tool.WindowsAPI import grab_screen
 from Tool.GetHP import Hp_getter
 from Tool.UserInput import User
-from Tool.FrameBuffer import FrameBuffer
+from Tool.FrameGetter import FrameGetter
 
 window_size = (0,0,1920,1017)
 station_size = (230, 230, 1670, 930)
@@ -94,7 +94,7 @@ def run_episode(hp, algorithm,agent,act_rmp_correct,act_rmp_wrong, move_rmp_corr
             break
         
 
-    thread1 = FrameBuffer(1, "FrameBuffer", WIDTH, HEIGHT, maxlen=FRAMEBUFFERSIZE)
+    thread1 = FrameGetter(1, "FrameBuffer", WIDTH, HEIGHT, maxlen=FRAMEBUFFERSIZE)
     thread1.start()
 
     last_hornet_y = 0

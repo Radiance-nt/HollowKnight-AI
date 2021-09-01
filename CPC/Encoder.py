@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from Tool.FrameBuffer import FrameBuffer
+from Tool.FrameGetter import FrameGetter
 
 
 def normalization_layer(num_channels: int, norm_type: str, groups: int, is_2d: bool = True):
@@ -92,7 +92,7 @@ class ResEncoder(nn.Module):
 
 
 if __name__ == "__main__":
-    framebuffer = FrameBuffer()
+    framebuffer = FrameGetter()
     obs = framebuffer.get_frame()
     print(obs.shape)
     if not isinstance(obs, torch.Tensor):
