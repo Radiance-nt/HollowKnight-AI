@@ -85,7 +85,7 @@ def warm_up_cpc(simsiam, img_buffer, epoch=0, warm_up_episode=5000, writer=None)
         # adjust_learning_rate(optimizer, init_lr, epoch)
         loss = train(train_loader, simsiam, criterion, optimizer)
         if episode % 50 == 0:
-            print('Warming up CPC: %s/%s episode in %s epoch' % (episode, warm_up_episode, epoch))
+            print('Warming up CPC: %s/%s episode in %s epoch.' % (episode, warm_up_episode, epoch))
         if writer:
             writer.add_scalar('CPC' + ' /' + 'loss', loss, total_episode)
         losses += loss
@@ -104,6 +104,7 @@ def warm_up_process(simsiam, img_buffer, warm_up_epoch, warm_up_episode, writer,
             best_loss = loss
             torch.save(simsiam, cpc_model_name)
             print('Best CPC Loss update: ', loss)
+        epoch += 1
 
 # if __name__ == "__main__":
 #     state_dim = 256

@@ -213,3 +213,6 @@ def pause_game(paused):
                     paused = True
                     time.sleep(1)
     return paused
+
+# paused = True
+# paused = Tool.Helper.pause_game(paused)

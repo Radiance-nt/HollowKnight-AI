@@ -3,14 +3,12 @@ import os
 import time
 from threading import Thread
 
-import torch.multiprocessing as mp
-
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from CPC.warm_up import warm_up_cpc, warm_up_process
+from CPC.warm_up import warm_up_process
 from CPC.Encoder import ResEncoder
-from Agent import Agent
+from Agent import Agent, agent_update_process
 from Tool.Actions import restart, ReleaseAll, take_action
 from Tool.GetHP import Hp_getter
 from Tool.FrameGetter import FrameGetter
@@ -24,6 +22,7 @@ gamma = 0.95  # discount factor
 
 warm_up_epoch = 400
 warm_up_episode = 600
+training_rl_episode = 10000
 
 lr_actor = 0.0003  # learning rate for actor network
 lr_critic = 0.001  # learning rate for critic network
@@ -89,8 +88,6 @@ def run_episode(getter, agent, obs_buffer, img_buffer=None):
 
 
 if __name__ == '__main__':
-    # paused = True
-    # paused = Tool.Helper.pause_game(paused)
     framegetter = FrameGetter()
     getter = Hp_getter()
     cpc_model_name = os.path.join('model', 'simsiam_' + str(stack_num) + 'stack_best.pkl')
@@ -114,10 +111,11 @@ if __name__ == '__main__':
 
     agent = Agent(encoder, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std)
 
-    # agent.algorithm.load(os.path.join('model', 'simsiam_best.pkl'))
+    # agent.algorithm.load(os.path.join('model', 'PPO_best.pkl'))
 
     init_point = getter.get_play_location()
     warm_process = None
+    training_rl_process = None
     episode = 0
 
     print('Training CPC = ', bool(warm_up_epoch))
@@ -125,25 +123,21 @@ if __name__ == '__main__':
         print('Warm up epoch =', warm_up_epoch, end='; ')
         print('Episodes for each epoch =', warm_up_episode)
     while episode < 30000:
-        # print('start one episode')
-        episode += 1
-        total_reward, total_step, done = run_episode(getter, agent, obs_buffer, img_buffer=img_buffer)
 
+        total_reward, total_step, done = run_episode(getter, agent, obs_buffer=obs_buffer, img_buffer=img_buffer)
         writer.add_scalar('Hornet' + ' /' + 'Reward', total_reward, episode)
         writer.add_scalar('Hornet' + ' /' + 'Win', max(0, done), episode)
         print("Episode: ", episode, ", Reward: ", total_reward, end=", ")
         print('Win!') if done == 1 else print()
 
         if warm_process is None:
-            warm_process = Thread(
-                target=warm_up_process,
-                args=(simsiam, img_buffer, warm_up_epoch, warm_up_episode, writer, cpc_model_name))
+            warm_process = Thread(target=warm_up_process, args=(
+                simsiam, img_buffer, warm_up_epoch, warm_up_episode, writer, cpc_model_name))
             warm_process.start()
 
-        if episode % 2 == 0:
-            print("Training PPO...")
-            agent.update()
-            if episode % 50 == 0:
-                agent.algorithm.save('model', episode)
-        else:
-            time.sleep(3.2)
+        if training_rl_process is None:
+            training_rl_process = Thread(target=agent_update_process, args=(agent, training_rl_episode))
+            training_rl_process.start()
+
+        time.sleep(3.2)
+        episode += 1

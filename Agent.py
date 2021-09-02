@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import random
+import time
+
 from PPO import PPO, RolloutBuffer
 import numpy as np
 import torch
@@ -44,3 +46,17 @@ class Agent:
         path = os.path.join(path, 'encoder_' + str(episode) + '.pkl')
         self.encoder._save_to_state_dict(path)
         self.algorithm.save(path, episode)
+
+
+def agent_update_process(agent, training_rl_episode):
+    episode = 0
+    while episode < training_rl_episode:
+        if len(agent.buffer) > 100:
+            agent.update()
+            # if episode % 10 == 0:
+            print('Training PPO in %s Epoch.' % episode)
+            if episode % 50 == 0:
+                agent.algorithm.save('model', episode)
+            episode += 1
+        else:
+            time.sleep(5)

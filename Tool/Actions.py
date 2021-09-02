@@ -2,10 +2,7 @@
 # You can define your actions here
 
 from Tool.SendKey import PressKey, ReleaseKey
-from Tool.WindowsAPI import grab_screen
 import time
-import cv2
-import threading
 
 # Hash code for key we may use: https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes?redirectedfrom=MSDN
 UP_ARROW = 0x26
@@ -32,7 +29,7 @@ def restart():
     Look_up()
     time.sleep(3)
     Look_up()
-    time.sleep(0.5)
+    time.sleep(0.7)
     PressKey(Z)
     time.sleep(0.1)
     ReleaseKey(Z)
@@ -63,6 +60,7 @@ def take_action(action):
     PressKey(X) if action['X'] > 0 else ReleaseKey(X)
     PressKey(C) if action['C'] > 0 else ReleaseKey(C)
     PressKey(F) if action['F'] > 0 else ReleaseKey(F)
+
 
 def ReleaseAll():
     ReleaseKey(UP_ARROW)

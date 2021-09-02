@@ -7,6 +7,7 @@
 /move_memory/
 /__pycache__/
 ./__pycache__
+/runs/
 /test_img/
 /OLD_FILE/
 /ce_ptr/

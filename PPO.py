@@ -34,6 +34,9 @@ class RolloutBuffer:
         self.rewards = []
         self.is_terminals = []
 
+    def __len__(self):
+        return len(self.states)
+
     def clear(self):
         del self.actions[:]
         del self.states[:]
@@ -198,9 +201,10 @@ class PPO:
 
     def update(self):
         # Monte Carlo estimate of returns
+        length=len(self.buffer.rewards)
         rewards = []
         discounted_reward = 0
-        for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):
+        for reward, is_terminal in zip(reversed(self.buffer.rewards[:length]), reversed(self.buffer.is_terminals[:length])):
             if is_terminal:
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
@@ -211,9 +215,9 @@ class PPO:
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
         # convert list to tensor
-        old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
-        old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
-        old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
+        old_states = torch.squeeze(torch.stack(self.buffer.states[:length], dim=0)).detach().to(device)
+        old_actions = torch.squeeze(torch.stack(self.buffer.actions[:length], dim=0)).detach().to(device)
+        old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs[:length], dim=0)).detach().to(device)
 
         # Optimize policy for K epochs
         for _ in range(self.K_epochs):
