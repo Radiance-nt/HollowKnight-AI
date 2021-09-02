@@ -1,3 +1,4 @@
+import cv2
 import torch
 import torch.nn as nn
 import numpy as np
@@ -13,7 +14,7 @@ class Buffer:
         self._top = 0
         self._length = _length
         self._stride = _stride
-        self._init()
+        self.init_buffer()
 
     def append(self, x):
         if self.__len__() < self._max_replay_buffer_size:
@@ -38,7 +39,7 @@ class Buffer:
             stack.append(self.buffer[pointer][np.newaxis, :, :])
         return np.concatenate(stack)
 
-    def _init(self):
+    def init_buffer(self):
         self.buffer = [np.zeros((80, 160))] * self._max_replay_buffer_size
 
     def __getitem__(self, index):

@@ -10,9 +10,10 @@ from CPC.tools import FrameDataset, GaussianBlur, TwoCropsTransform, SimSiam, Bu
 
 momentum = 0.9
 weight_decay = 1e-4
-batch_size = 32
+batch_size = 128
 lr = 0.05
 init_lr = lr * batch_size / 256
+
 
 # normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
 #                                  std=[0.229, 0.224, 0.225])
@@ -26,10 +27,8 @@ def to_tensor(pic):
         return img
 
 
-
 augmentation = [
     to_tensor,
-    # transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
     transforms.RandomApply([transforms.GaussianBlur(3, [.1, 2.])], p=0.5),
     transforms.RandomResizedCrop((2, 160), scale=(0.2, 1.)),
     transforms.Normalize(mean=[0.445], std=[0.227])
@@ -78,16 +77,15 @@ def warm_up_cpc(simsiam, img_buffer, epoch=0, warm_up_episode=5000, writer=None)
                                 momentum=momentum,
                                 weight_decay=weight_decay)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True, drop_last=True)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     criterion = nn.CosineSimilarity(dim=1).cuda()
     total_episode = epoch * warm_up_episode
     losses = 0
     for episode in range(warm_up_episode):
-        adjust_learning_rate(optimizer, init_lr, epoch)
+        # adjust_learning_rate(optimizer, init_lr, epoch)
         loss = train(train_loader, simsiam, criterion, optimizer)
-        if episode % 100 == 0:
+        if episode % 50 == 0:
             print('Warming up CPC: %s/%s episode in %s epoch' % (episode, warm_up_episode, epoch))
-            pass
         if writer:
             writer.add_scalar('CPC' + ' /' + 'loss', loss, total_episode)
         losses += loss
@@ -95,13 +93,25 @@ def warm_up_cpc(simsiam, img_buffer, epoch=0, warm_up_episode=5000, writer=None)
     return losses / warm_up_episode
 
 
-if __name__ == "__main__":
-    state_dim = 256
-    pred_dim = 64
-    encoder = ResEncoder(in_channels=4, out_dims=state_dim).cuda()
-    simsiam = SimSiam(encoder, state_dim, pred_dim).cuda()
-    img_buffer = Buffer(_max_replay_buffer_size=3000)
-    for i in range(50):
-        img_buffer.append(np.ones((80, 160)))
+def warm_up_process(simsiam, img_buffer, warm_up_epoch, warm_up_episode, writer, cpc_model_name):
+    epoch = 0
+    best_loss = 999
+    while epoch < warm_up_epoch:
+        loss = warm_up_cpc(simsiam, img_buffer,
+                           epoch=epoch, warm_up_episode=warm_up_episode, writer=writer)
+        print('CPC Epoch %s: loss = %s' % (epoch, loss))
+        if loss < best_loss:
+            best_loss = loss
+            torch.save(simsiam, cpc_model_name)
+            print('Best CPC Loss update: ', loss)
 
-    warm_up_cpc(simsiam, img_buffer)
+# if __name__ == "__main__":
+#     state_dim = 256
+#     pred_dim = 64
+#     encoder = ResEncoder(in_channels=4, out_dims=state_dim).cuda()
+#     simsiam = SimSiam(encoder, state_dim, pred_dim).cuda()
+#     img_buffer = Buffer(_max_replay_buffer_size=3000)
+#     for i in range(50):
+#         img_buffer.append(np.ones((80, 160)))
+#
+#     warm_up_cpc(simsiam, img_buffer)

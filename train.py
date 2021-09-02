@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
 import time
+from threading import Thread
+
+import torch.multiprocessing as mp
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from CPC.warm_up import warm_up_cpc
+from CPC.warm_up import warm_up_cpc, warm_up_process
 from CPC.Encoder import ResEncoder
 from Agent import Agent
 from Tool.Actions import restart, ReleaseAll, take_action
@@ -14,13 +17,13 @@ from Tool.FrameGetter import FrameGetter
 from CPC.tools import Buffer, SimSiam
 
 stack_num = 4
-stack_stride = 4
+stack_stride = 2
 K_epochs = 500  # update policy for K epochs in one PPO update
 eps_clip = 0.2  # clip parameter for PPO
 gamma = 0.95  # discount factor
 
-warm_up_epoch = 100
-warm_up_episode = 500
+warm_up_epoch = 400
+warm_up_episode = 600
 
 lr_actor = 0.0003  # learning rate for actor network
 lr_critic = 0.001  # learning rate for critic network
@@ -37,9 +40,9 @@ action_dim = 5
 
 def cal_reward(getter, hp, boss_hp):
     if getter.get_self_hp() < hp:
-        return -50
+        return -800
     if getter.get_boss_hp() < boss_hp:
-        return 50
+        return 80
     return 1
 
 
@@ -80,7 +83,7 @@ def run_episode(getter, agent, obs_buffer, img_buffer=None):
             ReleaseAll()
         episode_reward += reward
         step += 1
-        if step % 10 == 0 and img_buffer is not None:
+        if step % 5 == 0 and img_buffer is not None:
             img_buffer.append(obs)
     return episode_reward, step, done
 
@@ -114,15 +117,13 @@ if __name__ == '__main__':
     # agent.algorithm.load(os.path.join('model', 'simsiam_best.pkl'))
 
     init_point = getter.get_play_location()
-
-    best_loss = 999
+    warm_process = None
     episode = 0
 
     print('Training CPC = ', bool(warm_up_epoch))
     if warm_up_epoch:
         print('Warm up epoch =', warm_up_epoch, end='; ')
         print('Episodes for each epoch =', warm_up_episode)
-
     while episode < 30000:
         # print('start one episode')
         episode += 1
@@ -133,19 +134,16 @@ if __name__ == '__main__':
         print("Episode: ", episode, ", Reward: ", total_reward, end=", ")
         print('Win!') if done == 1 else print()
 
-        if episode < warm_up_epoch:
-            loss = warm_up_cpc(simsiam, img_buffer,
-                               epoch=episode, warm_up_episode=warm_up_episode, writer=writer)
-            print('CPC Epoch %s: loss = %s' % (episode, loss))
-            if loss < best_loss:
-                best_loss = loss
-                torch.save(simsiam, cpc_model_name)
-                print('Best CPC Loss update: ', loss)
+        if warm_process is None:
+            warm_process = Thread(
+                target=warm_up_process,
+                args=(simsiam, img_buffer, warm_up_epoch, warm_up_episode, writer, cpc_model_name))
+            warm_process.start()
 
         if episode % 2 == 0:
             print("Training PPO...")
             agent.update()
             if episode % 50 == 0:
                 agent.algorithm.save('model', episode)
-        if not (episode % 2 == 0 or episode < warm_up_epoch):
+        else:
             time.sleep(3.2)
