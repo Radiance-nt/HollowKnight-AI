@@ -201,10 +201,12 @@ class PPO:
 
     def update(self):
         # Monte Carlo estimate of returns
-        length=len(self.buffer.rewards)
+        length = min(len(self.buffer.rewards), len(self.buffer.is_terminals), len(self.buffer.states),
+                     len(self.buffer.actions), len(self.buffer.logprobs))
         rewards = []
         discounted_reward = 0
-        for reward, is_terminal in zip(reversed(self.buffer.rewards[:length]), reversed(self.buffer.is_terminals[:length])):
+        for reward, is_terminal in zip(reversed(self.buffer.rewards[:length]),
+                                       reversed(self.buffer.is_terminals[:length])):
             if is_terminal:
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)

@@ -15,13 +15,13 @@ from Tool.FrameGetter import FrameGetter
 from CPC.tools import Buffer, SimSiam
 
 stack_num = 4
-stack_stride = 2
+stack_stride = 3
 K_epochs = 500  # update policy for K epochs in one PPO update
 eps_clip = 0.2  # clip parameter for PPO
-gamma = 0.95  # discount factor
+gamma = 0.6  # discount factor
 
-warm_up_epoch = 400
-warm_up_episode = 600
+warm_up_epoch = 20
+warm_up_episode = 400
 training_rl_episode = 10000
 
 lr_actor = 0.0003  # learning rate for actor network

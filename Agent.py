@@ -51,7 +51,7 @@ class Agent:
 def agent_update_process(agent, training_rl_episode):
     episode = 0
     while episode < training_rl_episode:
-        if len(agent.buffer) > 100:
+        if len(agent.buffer) > 200:
             agent.update()
             # if episode % 10 == 0:
             print('Training PPO in %s Epoch.' % episode)
