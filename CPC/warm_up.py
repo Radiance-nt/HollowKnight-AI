@@ -106,13 +106,14 @@ def warm_up_process(simsiam, img_buffer, warm_up_epoch, warm_up_episode, writer,
             print('Best CPC Loss update: ', loss)
         epoch += 1
 
-# if __name__ == "__main__":
-#     state_dim = 256
-#     pred_dim = 64
-#     encoder = ResEncoder(in_channels=4, out_dims=state_dim).cuda()
-#     simsiam = SimSiam(encoder, state_dim, pred_dim).cuda()
-#     img_buffer = Buffer(_max_replay_buffer_size=3000)
-#     for i in range(50):
-#         img_buffer.append(np.ones((80, 160)))
-#
-#     warm_up_cpc(simsiam, img_buffer)
+
+if __name__ == "__main__":
+    state_dim = 256
+    pred_dim = 64
+    encoder = ResEncoder(in_channels=1, out_dims=state_dim).cuda()
+    simsiam = SimSiam(encoder, state_dim, pred_dim).cuda()
+    img_buffer = Buffer(_length=1, _max_replay_buffer_size=3000)
+    for i in range(50):
+        img_buffer.append(np.ones((80, 160)))
+
+    warm_up_cpc(simsiam, img_buffer)

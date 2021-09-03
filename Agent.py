@@ -13,18 +13,19 @@ device = torch.device('cuda:0') if (torch.cuda.is_available()) else torch.device
 
 
 class Agent:
-    def __init__(self, encoder, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std):
+    def __init__(self, encoder, stack_num, state_dim, action_dim,
+                 lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std):
         self.encoder = encoder
         self.buffer = RolloutBuffer()
-        self.algorithm = PPO(state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip,
+        self.algorithm = PPO(stack_num, state_dim, action_dim,
+                             lr_actor, lr_critic, gamma, K_epochs, eps_clip,
                              action_std_init=action_std, buffer=self.buffer)
 
     def sample_action(self, obs):
         if not isinstance(obs, torch.Tensor):
             obs = torch.Tensor(obs)
-            if len(obs.shape) < 3:
+            if len(obs.shape) < 4:
                 obs = obs.unsqueeze(0)
-            obs = obs.unsqueeze(0)
         obs = obs.cuda()
         with torch.no_grad():
             code = self.encoder(obs)
@@ -51,7 +52,7 @@ class Agent:
 def agent_update_process(agent, training_rl_episode):
     episode = 0
     while episode < training_rl_episode:
-        if len(agent.buffer) > 200:
+        if len(agent.buffer) > 400:
             agent.update()
             # if episode % 10 == 0:
             print('Training PPO in %s Epoch.' % episode)

@@ -16,7 +16,7 @@ from CPC.tools import Buffer, SimSiam
 
 stack_num = 4
 stack_stride = 3
-K_epochs = 500  # update policy for K epochs in one PPO update
+K_epochs = 5  # update policy for K epochs in one PPO update
 eps_clip = 0.2  # clip parameter for PPO
 gamma = 0.6  # discount factor
 
@@ -68,7 +68,7 @@ def run_episode(getter, agent, obs_buffer, img_buffer=None):
         obs_buffer.append(obs)
         stack_obs = obs_buffer.get_stack(length=stack_num, stride=stack_stride)
         action = agent.sample_action(stack_obs)
-        take_action(action)
+        # take_action(action)
         reward = cal_reward(getter, hp, boss_hp)
         agent.buffer.rewards.append(reward)
         agent.buffer.is_terminals.append(done)
@@ -90,7 +90,8 @@ def run_episode(getter, agent, obs_buffer, img_buffer=None):
 if __name__ == '__main__':
     framegetter = FrameGetter()
     getter = Hp_getter()
-    cpc_model_name = os.path.join('model', 'simsiam_' + str(stack_num) + 'stack_best.pkl')
+    # cpc_model_name = os.path.join('model', 'simsiam_' + str(stack_num) + 'stack_best.pkl')
+    cpc_model_name = os.path.join('model', 'simsiam_' + 'stack_best.pkl')
     if os.path.exists(cpc_model_name):
         simsiam = torch.load(cpc_model_name)
         encoder = simsiam.encoder
@@ -99,17 +100,18 @@ if __name__ == '__main__':
         if not train_cpc:
             warm_up_epoch = 0
     else:
-        encoder = ResEncoder(in_channels=stack_num, out_dims=state_dim)
+        encoder = ResEncoder(in_channels=1, out_dims=state_dim)
         simsiam = SimSiam(encoder, state_dim, pred_dim)
         print('Create Encoder successfully.')
 
     simsiam = simsiam.cuda()
     encoder = encoder.cuda()
     obs_buffer = Buffer(_length=stack_num, _stride=stack_stride, _max_replay_buffer_size=20)
-    img_buffer = Buffer(_length=stack_num, _stride=stack_stride, _max_replay_buffer_size=500)
+    img_buffer = Buffer(_length=1, _max_replay_buffer_size=500)
     writer = SummaryWriter()
 
-    agent = Agent(encoder, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std)
+    agent = Agent(encoder, stack_num, state_dim, action_dim,
+                  lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std)
 
     # agent.algorithm.load(os.path.join('model', 'PPO_best.pkl'))
 
@@ -122,8 +124,8 @@ if __name__ == '__main__':
     if warm_up_epoch:
         print('Warm up epoch =', warm_up_epoch, end='; ')
         print('Episodes for each epoch =', warm_up_episode)
-    while episode < 30000:
 
+    while episode < 30000:
         total_reward, total_step, done = run_episode(getter, agent, obs_buffer=obs_buffer, img_buffer=img_buffer)
         writer.add_scalar('Hornet' + ' /' + 'Reward', total_reward, episode)
         writer.add_scalar('Hornet' + ' /' + 'Win', max(0, done), episode)
@@ -139,5 +141,5 @@ if __name__ == '__main__':
             training_rl_process = Thread(target=agent_update_process, args=(agent, training_rl_episode))
             training_rl_process.start()
 
-        time.sleep(3.2)
+        time.sleep(3.5)
         episode += 1

@@ -150,7 +150,8 @@ class ActorCritic(nn.Module):
 
 
 class PPO:
-    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip,
+    def __init__(self, stack_num, state_dim, action_dim,
+                 lr_actor, lr_critic, gamma, K_epochs, eps_clip,
                  action_std_init=0.6, buffer=None):
 
         self.action_std = action_std_init
@@ -160,7 +161,7 @@ class PPO:
         self.K_epochs = K_epochs
 
         self.buffer = buffer
-
+        self.capsule = nn.Sequential(nn.Flatten(start_dim=-2), nn.Linear(stack_num * state_dim, state_dim)).to(device)
         self.policy = ActorCritic(state_dim, action_dim, action_std_init).to(device)
         self.optimizer = torch.optim.Adam([
             {'params': self.policy.actor.parameters(), 'lr': lr_actor},
@@ -188,9 +189,11 @@ class PPO:
         self.set_action_std(self.action_std)
 
     def select_action(self, state):
+
         with torch.no_grad():
             # state = torch.FloatTensor(state).to(device)
-            action, action_logprob = self.policy_old.act(state)
+            cap_state = self.capsule(state).unsqueeze(0)
+            action, action_logprob = self.policy_old.act(cap_state)
 
         self.buffer.states.append(state.cpu())
         self.buffer.actions.append(action.cpu())
@@ -215,9 +218,8 @@ class PPO:
         # Normalizing the rewards
         rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
-
         # convert list to tensor
-        old_states = torch.squeeze(torch.stack(self.buffer.states[:length], dim=0)).detach().to(device)
+        old_states = torch.squeeze(self.capsule(torch.stack(self.buffer.states[:length], dim=0).to(device))).detach()
         old_actions = torch.squeeze(torch.stack(self.buffer.actions[:length], dim=0)).detach().to(device)
         old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs[:length], dim=0)).detach().to(device)
 

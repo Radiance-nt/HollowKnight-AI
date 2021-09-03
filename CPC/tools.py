@@ -8,7 +8,7 @@ import random
 
 
 class Buffer:
-    def __init__(self, _length=4, _stride=4, _max_replay_buffer_size=300):
+    def __init__(self, _length, _stride=4, _max_replay_buffer_size=300):
         self.buffer = []
         self._max_replay_buffer_size = _max_replay_buffer_size
         self._top = 0
@@ -29,15 +29,16 @@ class Buffer:
         if top is None:
             top = self._top
         if length is None:
-            top = self._length
+            length = self._length
         if stride is None:
-            top = self._stride
+            stride = self._stride
         stack = []
-        for i in range(self._length):
-            pointer = top - i * self._stride
+        for i in range(length):
+            pointer = top - i * stride
             pointer = pointer + self._max_replay_buffer_size if pointer < 0 else pointer
-            stack.append(self.buffer[pointer][np.newaxis, :, :])
-        return np.concatenate(stack)
+            stack.append(self.buffer[pointer])
+        return np.stack(stack)[:, np.newaxis, :, :]
+        # return np.concatenate(stack)
 
     def init_buffer(self):
         self.buffer = [np.zeros((80, 160))] * self._max_replay_buffer_size
