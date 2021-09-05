@@ -222,7 +222,7 @@ class PPO:
         old_states = torch.squeeze(self.capsule(torch.stack(self.buffer.states[:length], dim=0).to(device))).detach()
         old_actions = torch.squeeze(torch.stack(self.buffer.actions[:length], dim=0)).detach().to(device)
         old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs[:length], dim=0)).detach().to(device)
-
+        loss = None
         # Optimize policy for K epochs
         for _ in range(self.K_epochs):
             # Evaluating old actions and values
@@ -252,6 +252,10 @@ class PPO:
 
         # clear buffer
         self.buffer.clear()
+        infos = {}
+        if loss is not None:
+            infos['loss'] = loss.mean().item()
+        return infos
 
     def save(self, path, episode):
         path = os.path.join(path, 'PPO_' + str(episode) + '.pkl')

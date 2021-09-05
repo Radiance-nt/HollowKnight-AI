@@ -41,7 +41,8 @@ class Agent:
         return dic
 
     def update(self):
-        self.algorithm.update()
+        infos = self.algorithm.update()
+        return infos
 
     def save(self, path='model', episode=0):
         path = os.path.join(path, 'encoder_' + str(episode) + '.pkl')
@@ -49,11 +50,12 @@ class Agent:
         self.algorithm.save(path, episode)
 
 
-def agent_update_process(agent, training_rl_episode):
+def agent_update_process(agent, training_rl_episode, writer):
     episode = 0
     while episode < training_rl_episode:
         if len(agent.buffer) > 400:
-            agent.update()
+            infos = agent.update()
+            log(infos, episode, writer)
             # if episode % 10 == 0:
             print('Training PPO in %s Epoch.' % episode)
             if episode % 50 == 0:
@@ -61,3 +63,8 @@ def agent_update_process(agent, training_rl_episode):
             episode += 1
         else:
             time.sleep(5)
+
+
+def log(infos, episode, writer):
+    for item in infos:
+        writer.add_scalar('PPO' + ' /' + item, infos[item], episode)

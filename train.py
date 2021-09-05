@@ -138,7 +138,7 @@ if __name__ == '__main__':
             warm_process.start()
 
         if training_rl_process is None:
-            training_rl_process = Thread(target=agent_update_process, args=(agent, training_rl_episode))
+            training_rl_process = Thread(target=agent_update_process, args=(agent, training_rl_episode, writer))
             training_rl_process.start()
 
         time.sleep(3.5)
