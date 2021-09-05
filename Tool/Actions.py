@@ -1,5 +1,6 @@
 # Define the actions we may need during training
 # You can define your actions here
+import random
 
 from Tool.SendKey import PressKey, ReleaseKey
 import time
@@ -36,6 +37,9 @@ def restart():
     time.sleep(2)
 
 
+prob = lambda p: (p - 0.5) * 2
+
+
 def take_action(action):
     if action['lr'] == 0:
         ReleaseKey(RIGHT_ARROW)
@@ -48,18 +52,23 @@ def take_action(action):
         ReleaseKey(RIGHT_ARROW)
 
     if action['ud'] > 0.5:
-        ReleaseKey(UP_ARROW)
-        PressKey(DOWN_ARROW)
-    elif action['ud'] < 0.5:
-        ReleaseKey(DOWN_ARROW)
-        PressKey(UP_ARROW)
+        if prob(action['ud']) > random.uniform(0, 1):
+            ReleaseKey(UP_ARROW)
+            PressKey(DOWN_ARROW)
+        else:
+            ReleaseKey(DOWN_ARROW)
+            ReleaseKey(UP_ARROW)
     else:
-        ReleaseKey(DOWN_ARROW)
-        ReleaseKey(UP_ARROW)
-    PressKey(Z) if action['Z'] > 0 else ReleaseKey(Z)
-    PressKey(X) if action['X'] > 0 else ReleaseKey(X)
-    PressKey(C) if action['C'] > 0 else ReleaseKey(C)
-    PressKey(F) if action['F'] > 0 else ReleaseKey(F)
+        if prob(action['ud']) < -random.uniform(0, 1):
+            ReleaseKey(DOWN_ARROW)
+            PressKey(UP_ARROW)
+        else:
+            ReleaseKey(DOWN_ARROW)
+            ReleaseKey(UP_ARROW)
+    PressKey(Z) if action['Z'] > random.uniform(0, 1) else ReleaseKey(Z)
+    PressKey(X) if action['X'] > random.uniform(0, 1) else ReleaseKey(X)
+    PressKey(C) if action['C'] > random.uniform(0, 1) else ReleaseKey(C)
+    PressKey(F) if action['F'] > random.uniform(0, 1) else ReleaseKey(F)
 
 
 def ReleaseAll():

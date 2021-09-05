@@ -18,9 +18,9 @@ stack_num = 4
 stack_stride = 3
 K_epochs = 5  # update policy for K epochs in one PPO update
 eps_clip = 0.2  # clip parameter for PPO
-gamma = 0.6  # discount factor
+gamma = 0.7  # discount factor
 
-warm_up_epoch = 20
+warm_up_epoch = 15
 warm_up_episode = 400
 training_rl_episode = 10000
 
@@ -68,7 +68,7 @@ def run_episode(getter, agent, obs_buffer, img_buffer=None):
         obs_buffer.append(obs)
         stack_obs = obs_buffer.get_stack(length=stack_num, stride=stack_stride)
         action = agent.sample_action(stack_obs)
-        # take_action(action)
+        take_action(action)
         reward = cal_reward(getter, hp, boss_hp)
         agent.buffer.rewards.append(reward)
         agent.buffer.is_terminals.append(done)
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     simsiam = simsiam.cuda()
     encoder = encoder.cuda()
     obs_buffer = Buffer(_length=stack_num, _stride=stack_stride, _max_replay_buffer_size=20)
-    img_buffer = Buffer(_length=1, _max_replay_buffer_size=500)
+    img_buffer = Buffer(_length=1, _max_replay_buffer_size=800)
     writer = SummaryWriter()
 
     agent = Agent(encoder, stack_num, state_dim, action_dim,

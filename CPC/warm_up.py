@@ -10,7 +10,7 @@ from CPC.tools import FrameDataset, GaussianBlur, TwoCropsTransform, SimSiam, Bu
 
 momentum = 0.9
 weight_decay = 1e-4
-batch_size = 128
+batch_size = 256
 lr = 0.05
 init_lr = lr * batch_size / 256
 
