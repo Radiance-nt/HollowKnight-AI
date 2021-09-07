@@ -15,7 +15,7 @@ from Tool.FrameGetter import FrameGetter
 from CPC.tools import Buffer, SimSiam
 
 stack_num = 4
-stack_stride = 3
+stack_stride = 4
 K_epochs = 5  # update policy for K epochs in one PPO update
 eps_clip = 0.2  # clip parameter for PPO
 gamma = 0.7  # discount factor
@@ -57,7 +57,7 @@ def run_episode(getter, agent, obs_buffer, img_buffer=None):
             step = 0
             restart()
         time.sleep(0.5)
-
+    obs_buffer.clear()
     step = 0
     done = 0
     episode_reward = 0

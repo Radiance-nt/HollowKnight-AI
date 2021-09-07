@@ -14,7 +14,7 @@ class Buffer:
         self._top = 0
         self._length = _length
         self._stride = _stride
-        self.init_buffer()
+        # self.init_buffer()
 
     def append(self, x):
         if self.__len__() < self._max_replay_buffer_size:
@@ -34,14 +34,19 @@ class Buffer:
             stride = self._stride
         stack = []
         for i in range(length):
-            pointer = top - i * stride
+            pointer = top - i * stride - 1
             pointer = pointer + self._max_replay_buffer_size if pointer < 0 else pointer
+            if len(self.buffer) < self._max_replay_buffer_size:
+                pointer = 0
             stack.append(self.buffer[pointer])
         return np.stack(stack)[:, np.newaxis, :, :]
         # return np.concatenate(stack)
 
     def init_buffer(self):
         self.buffer = [np.zeros((80, 160))] * self._max_replay_buffer_size
+
+    def clear(self):
+        del self.buffer[:]
 
     def __getitem__(self, index):
         return self.get_stack(index)

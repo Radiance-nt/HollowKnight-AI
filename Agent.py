@@ -3,6 +3,9 @@ import os
 import random
 import time
 
+import cv2
+from torch.nn import GroupNorm
+
 from PPO import PPO, RolloutBuffer
 import numpy as np
 import torch
@@ -10,6 +13,27 @@ from torch import nn
 from torch.distributions import MultivariateNormal, Categorical
 
 device = torch.device('cuda:0') if (torch.cuda.is_available()) else torch.device('cpu')
+
+forward_maps = []
+
+
+def forward_hook(module, input, output):
+    forward_maps.append(output)
+    return None
+
+
+def display(forward_maps):
+    for i, activations in enumerate(forward_maps):
+        activationMap = torch.squeeze(activations[0])
+        activationMap = activationMap.sum(0)
+        activationMap = cv2.resize(activationMap.data.cpu().numpy(), (160, 80))
+        if np.max(activationMap) - np.min(activationMap) != 0:
+            # activationMap = (activationMap - np.min(activationMap)) / (np.max(activationMap) - np.min(activationMap))
+            activationMap = (activationMap - np.min(activationMap)) / (
+                np.max(activationMap))
+        activationMaps = activationMap if i == 0 else np.concatenate([activationMaps, activationMap], axis=-2)
+    cv2.imshow('', activationMaps)
+    cv2.waitKey(1)
 
 
 class Agent:
@@ -21,7 +45,14 @@ class Agent:
                              lr_actor, lr_critic, gamma, K_epochs, eps_clip,
                              action_std_init=action_std, buffer=self.buffer)
 
+        for i, layers in enumerate(self.encoder._modules.items()):
+            if i == 0:
+                for layer in layers[1]:
+                    if not isinstance(layer, GroupNorm):
+                        layer.register_forward_hook(forward_hook)
+
     def sample_action(self, obs):
+        del forward_maps[:]
         if not isinstance(obs, torch.Tensor):
             obs = torch.Tensor(obs)
             if len(obs.shape) < 4:
@@ -30,7 +61,7 @@ class Agent:
         with torch.no_grad():
             code = self.encoder(obs)
             out = self.algorithm.select_action(code)
-
+        display(forward_maps)
         dic = {'lr': out[0], 'ud': out[1], 'Z': out[2], 'X': out[3], 'C': out[4], 'F': out[5]}
 
         return dic

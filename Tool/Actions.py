@@ -84,7 +84,14 @@ def ReleaseAll():
 
 if __name__ == "__main__":
     time.sleep(1)
-    while True:
-        PressKey(X)
-        ReleaseKey(LEFT_ARROW)
-        time.sleep(0.2)
+    restart()
+    # while True:
+    #     PressKey(X)
+    #     # ReleaseKey(LEFT_ARROW)
+    #     print('1')
+    #
+    #     time.sleep(0.2)
+    #     ReleaseKey(X)
+    #     print('0')
+    #
+    #
