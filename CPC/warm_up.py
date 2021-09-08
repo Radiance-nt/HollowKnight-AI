@@ -10,7 +10,7 @@ from CPC.tools import FrameDataset, GaussianBlur, TwoCropsTransform, SimSiam, Bu
 
 momentum = 0.9
 weight_decay = 1e-4
-batch_size = 512
+batch_size = 256
 lr = 0.05
 init_lr = lr * batch_size / 256
 
@@ -72,6 +72,7 @@ def train(train_loader, model, criterion, optimizer):
 
 
 def warm_up_cpc(simsiam, img_buffer, epoch=0, warm_up_episode=5000, writer=None):
+    assert len(img_buffer) > batch_size
     train_dataset = FrameDataset(img_buffer, TwoCropsTransform(transforms.Compose(augmentation)))
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 
@@ -103,8 +104,11 @@ def warm_up_process(simsiam, img_buffer, warm_up_epoch, warm_up_episode, writer,
         print('CPC Epoch %s: loss = %s' % (epoch, loss))
         if loss < best_loss:
             best_loss = loss
-            torch.save(simsiam, cpc_model_name)
+            torch.save(simsiam, cpc_model_name + 'best.pkl')
             print('Best CPC Loss update: ', loss)
+        if epoch % 5 == 0:
+            torch.save(simsiam, cpc_model_name + str(epoch) + 'epoch.pkl')
+
         epoch += 1
 
 

@@ -18,7 +18,8 @@ forward_maps = []
 
 
 def forward_hook(module, input, output):
-    forward_maps.append(output)
+    if output.shape[0] < 99:
+        forward_maps.append(output)
     return None
 
 
@@ -26,11 +27,16 @@ def display(forward_maps):
     for i, activations in enumerate(forward_maps):
         activationMap = torch.squeeze(activations[0])
         activationMap = activationMap.sum(0)
-        activationMap = cv2.resize(activationMap.data.cpu().numpy(), (160, 80))
+        activationMap = activationMap.data.cpu().numpy()
+        # activationMap = cv2.resize(activationMap, (160, 80))
         if np.max(activationMap) - np.min(activationMap) != 0:
-            # activationMap = (activationMap - np.min(activationMap)) / (np.max(activationMap) - np.min(activationMap))
-            activationMap = (activationMap - np.min(activationMap)) / (
-                np.max(activationMap))
+            activationMap = (activationMap - np.min(activationMap)) / (np.max(activationMap) - np.min(activationMap))
+        if not activationMap.shape[0] == 80:
+            activationMap_pad1 = np.zeros((80 - activationMap.shape[0], activationMap.shape[1]))
+            activationMap_pad2 = np.zeros((80, 160 - activationMap.shape[1]))
+            activationMap = np.concatenate((activationMap, activationMap_pad1), axis=-2)
+            activationMap = np.concatenate((activationMap, activationMap_pad2), axis=-1)
+
         activationMaps = activationMap if i == 0 else np.concatenate([activationMaps, activationMap], axis=-2)
     cv2.imshow('', activationMaps)
     cv2.waitKey(1)
@@ -52,16 +58,17 @@ class Agent:
                         layer.register_forward_hook(forward_hook)
 
     def sample_action(self, obs):
-        del forward_maps[:]
         if not isinstance(obs, torch.Tensor):
             obs = torch.Tensor(obs)
             if len(obs.shape) < 4:
                 obs = obs.unsqueeze(0)
         obs = obs.cuda()
+        del forward_maps[:]
         with torch.no_grad():
             code = self.encoder(obs)
             out = self.algorithm.select_action(code)
         display(forward_maps)
+
         dic = {'lr': out[0], 'ud': out[1], 'Z': out[2], 'X': out[3], 'C': out[4], 'F': out[5]}
 
         return dic

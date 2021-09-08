@@ -29,9 +29,9 @@ class PreactResBlock(nn.Module):
 
         use_bias = norm_type == "none"
         self.bn1 = normalization_layer(in_channels, norm_type, groups)
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=use_bias)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1,padding_mode='replicate', bias=use_bias)
         self.bn2 = normalization_layer(out_channels, norm_type, groups)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=use_bias)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, padding_mode='replicate',bias=use_bias)
 
         if stride != 1 or in_channels != out_channels:
             self.downsample = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False)
@@ -58,7 +58,7 @@ class ResEncoder(nn.Module):
         # initial conv
         use_bias = norm_type == "none"
         layers = [
-            nn.Conv2d(in_channels, start_channels, kernel_size=3, stride=1, padding=1, bias=use_bias),
+            nn.Conv2d(in_channels, start_channels, kernel_size=3, stride=1, padding=1,padding_mode='replicate', bias=use_bias),
             normalization_layer(start_channels, norm_type, groups)
         ]
         # res blocks

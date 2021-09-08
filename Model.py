@@ -11,11 +11,11 @@ class BasicBlock(layers.Layer):
         self.filter_num = filter_num
         self.stride = stride
         self.layers = []
-        self.conv1=layers.Conv2D(filter_num,3,strides=stride,padding='same', name = name+'_1')
+        self.conv1=layers.Conv2D(filter_num,3,strides=stride,padding='same',padding_mode='replicate', name = name+'_1')
         # self.bn1=layers.BatchNormalization()
         self.relu=layers.Activation('relu')
 
-        self.conv2=layers.Conv2D(filter_num,3,strides=1,padding='same', name = name+'_2')
+        self.conv2=layers.Conv2D(filter_num,3,strides=1,padding='same',padding_mode='replicate', name = name+'_2')
         # self.bn2 = layers.BatchNormalization()
         self.layers.append(self.conv1)
         self.layers.append(self.conv2)

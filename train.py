@@ -21,7 +21,7 @@ K_epochs = 5  # update policy for K epochs in one PPO update
 eps_clip = 0.2  # clip parameter for PPO
 gamma = 0.7  # discount factor
 
-warm_up_epoch = 15
+warm_up_epoch = 25
 warm_up_episode = 400
 training_rl_episode = 10000
 
@@ -84,7 +84,7 @@ def run_episode(getter, agent, obs_buffer, img_buffer=None):
             ReleaseAll()
         episode_reward += reward
         step += 1
-        if step % 2 == 0 and img_buffer is not None:
+        if step % 1 == 0 and img_buffer is not None:
             img_buffer.append(obs)
     return episode_reward, step, done
 
@@ -93,9 +93,9 @@ if __name__ == '__main__':
     assert colormode == 1 or colormode == 4
     framegetter = FrameGetter(colormode)
     getter = Hp_getter()
-    cpc_model_name = os.path.join('model', 'encoder', 'simsiam_' + str(colormode) + 'channel_best.pkl')
+    cpc_model_name = os.path.join('model', 'encoder', 'simsiam_' + str(colormode) + 'channel_')
     if os.path.exists(cpc_model_name):
-        simsiam = torch.load(cpc_model_name)
+        simsiam = torch.load(cpc_model_name+'best.pkl')
         encoder = simsiam.encoder
         print('Loading Encoder Network successfully.')
         train_cpc = input("Whether to train CPC?")
