@@ -10,7 +10,7 @@ from CPC.tools import FrameDataset, GaussianBlur, TwoCropsTransform, SimSiam, Bu
 
 momentum = 0.9
 weight_decay = 1e-4
-batch_size = 256
+batch_size = 512
 lr = 0.05
 init_lr = lr * batch_size / 256
 
@@ -73,11 +73,12 @@ def train(train_loader, model, criterion, optimizer):
 
 def warm_up_cpc(simsiam, img_buffer, epoch=0, warm_up_episode=5000, writer=None):
     train_dataset = FrameDataset(img_buffer, TwoCropsTransform(transforms.Compose(augmentation)))
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+
     optimizer = torch.optim.SGD(simsiam.parameters(), init_lr,
                                 momentum=momentum,
                                 weight_decay=weight_decay)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     criterion = nn.CosineSimilarity(dim=1).cuda()
     total_episode = epoch * warm_up_episode
     losses = 0

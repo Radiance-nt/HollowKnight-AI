@@ -39,7 +39,7 @@ class Buffer:
             if len(self.buffer) < self._max_replay_buffer_size:
                 pointer = 0
             stack.append(self.buffer[pointer])
-        return np.stack(stack)[:, np.newaxis, :, :]
+        return np.stack(stack)
         # return np.concatenate(stack)
 
     def init_buffer(self):
