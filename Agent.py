@@ -18,7 +18,7 @@ forward_maps = []
 
 
 def forward_hook(module, input, output):
-    if output.shape[0] < 99:
+    if output.shape[0] < 20: # batchsize
         forward_maps.append(output)
     return None
 
@@ -51,11 +51,11 @@ class Agent:
                              lr_actor, lr_critic, gamma, K_epochs, eps_clip,
                              action_std_init=action_std, buffer=self.buffer)
 
-        for i, layers in enumerate(self.encoder._modules.items()):
-            if i == 0:
-                for layer in layers[1]:
-                    if not isinstance(layer, GroupNorm):
-                        layer.register_forward_hook(forward_hook)
+        # for i, layers in enumerate(self.encoder._modules.items()):
+        #     if i == 0:
+        #         for layer in layers[1]:
+        #             if not isinstance(layer, GroupNorm):
+        #                 layer.register_forward_hook(forward_hook)
 
     def sample_action(self, obs):
         if not isinstance(obs, torch.Tensor):
@@ -66,8 +66,10 @@ class Agent:
         del forward_maps[:]
         with torch.no_grad():
             code = self.encoder(obs)
+            print('encoder code', code)
             out = self.algorithm.select_action(code)
-        display(forward_maps)
+
+        # display(forward_maps)
 
         dic = {'lr': out[0], 'ud': out[1], 'Z': out[2], 'X': out[3], 'C': out[4], 'F': out[5]}
 

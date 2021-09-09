@@ -11,13 +11,13 @@ from torch.distributions import Categorical
 print("============================================================================================")
 
 # set device to cpu or cuda
-device = torch.device('cpu')
 
 if (torch.cuda.is_available()):
     device = torch.device('cuda:0')
     torch.cuda.empty_cache()
     print("Device set to : " + str(torch.cuda.get_device_name(device)))
 else:
+    device = torch.device('cpu')
     print("Device set to : cpu")
 
 print("============================================================================================")
@@ -106,7 +106,6 @@ class ActorCritic(nn.Module):
 
     def act(self, state):
         moves, keys = self.actor(state)
-
         cov_mat = torch.diag(self.action_var).unsqueeze(dim=0)
         keys_dist = MultivariateNormal(keys, cov_mat)
         key_action = keys_dist.sample()
@@ -189,7 +188,6 @@ class PPO:
         self.set_action_std(self.action_std)
 
     def select_action(self, state):
-
         with torch.no_grad():
             # state = torch.FloatTensor(state).to(device)
             cap_state = self.capsule(state).unsqueeze(0)

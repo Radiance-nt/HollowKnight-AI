@@ -33,9 +33,11 @@ class FrameGetter():
         img.shape = (self.height, self.width, 4)
         if self.colormode == 1:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        if self.colormode == 3:
+            img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
         img = cv2.resize(img, (160, 80))
-        cv2.imshow('frame', img)
-        cv2.waitKey(1)
+        # cv2.imshow('frame', img)
+        # cv2.waitKey(1)
         if self.colormode == 1:
             img = img[:, :, np.newaxis]
         return img.transpose(2, 0, 1)

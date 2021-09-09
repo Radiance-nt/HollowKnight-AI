@@ -14,7 +14,7 @@ from Tool.GetHP import Hp_getter
 from Tool.FrameGetter import FrameGetter
 from CPC.tools import Buffer, SimSiam
 
-colormode = 4
+colormode = 3
 stack_num = 4
 stack_stride = 4
 K_epochs = 5  # update policy for K epochs in one PPO update
@@ -67,8 +67,8 @@ def run_episode(getter, agent, obs_buffer, img_buffer=None):
         boss_hp = getter.get_boss_hp()
         obs = framegetter.get_frame()
         obs_buffer.append(obs)
-        # print('obs.shape',obs.shape)
         stack_obs = obs_buffer.get_stack(length=stack_num, stride=stack_stride)
+        # print('stack_obs.shape',stack_obs.shape)
         action = agent.sample_action(stack_obs)
         take_action(action)
         reward = cal_reward(getter, hp, boss_hp)
@@ -90,12 +90,12 @@ def run_episode(getter, agent, obs_buffer, img_buffer=None):
 
 
 if __name__ == '__main__':
-    assert colormode == 1 or colormode == 4
+    assert colormode == 1 or colormode == 4 or colormode == 3
     framegetter = FrameGetter(colormode)
     getter = Hp_getter()
     cpc_model_name = os.path.join('model', 'encoder', 'simsiam_' + str(colormode) + 'channel_')
     if os.path.exists(cpc_model_name):
-        simsiam = torch.load(cpc_model_name+'best.pkl')
+        simsiam = torch.load(cpc_model_name + 'best.pkl')
         encoder = simsiam.encoder
         print('Loading Encoder Network successfully.')
         train_cpc = input("Whether to train CPC?")

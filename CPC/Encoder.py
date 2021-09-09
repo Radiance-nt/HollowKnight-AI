@@ -29,9 +29,11 @@ class PreactResBlock(nn.Module):
 
         use_bias = norm_type == "none"
         self.bn1 = normalization_layer(in_channels, norm_type, groups)
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1,padding_mode='replicate', bias=use_bias)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1,
+                               padding_mode='replicate', bias=use_bias)
         self.bn2 = normalization_layer(out_channels, norm_type, groups)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, padding_mode='replicate',bias=use_bias)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, padding_mode='replicate',
+                               bias=use_bias)
 
         if stride != 1 or in_channels != out_channels:
             self.downsample = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False)
@@ -56,9 +58,11 @@ class ResEncoder(nn.Module):
         super().__init__()
         # network architecture
         # initial conv
+        self.in_channels = in_channels
         use_bias = norm_type == "none"
         layers = [
-            nn.Conv2d(in_channels, start_channels, kernel_size=3, stride=1, padding=1,padding_mode='replicate', bias=use_bias),
+            nn.Conv2d(in_channels, start_channels, kernel_size=3, stride=1, padding=1, padding_mode='replicate',
+                      bias=use_bias),
             normalization_layer(start_channels, norm_type, groups)
         ]
         # res blocks
@@ -72,6 +76,8 @@ class ResEncoder(nn.Module):
         self.layers = nn.Sequential(*layers)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(64, out_dims)
+        self.normalize = nn.GroupNorm(groups, int(num_channels/2))
+        self.fc_1 = nn.Linear(64, out_dims)
 
     def forward(self, x):
         # reshape N FS C H W --> N C*FS H W
@@ -80,12 +86,12 @@ class ResEncoder(nn.Module):
         # uint8 --> float
         if x.dtype is torch.uint8:
             x = x.to(torch.float) / 255
-
         x = self.layers(x)
         x = self.avgpool(x)
         x = nn.Flatten()(x)
-        if x.shape[0] == 1:
-            x = self.fc[6](x)
+        if x.shape[0] < 20:
+            x = self.normalize(x)
+            x = self.fc_1(x)
         else:
             x = self.fc(x)
         return x

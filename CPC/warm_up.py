@@ -27,20 +27,6 @@ def to_tensor(pic):
         return img
 
 
-augmentation = [
-    to_tensor,
-    transforms.RandomApply([transforms.GaussianBlur(3, [.1, 2.])], p=0.5),
-    transforms.RandomResizedCrop((2, 160), scale=(0.2, 1.)),
-    transforms.Normalize(mean=[0.445], std=[0.227])
-]
-
-
-# augmentation = [    transforms.RandomApply([
-#         transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
-#     ], p=0.8),
-#         transforms.RandomGrayscale(p=0.2),z]
-
-
 def adjust_learning_rate(optimizer, init_lr, epoch, epochs=100):
     """Decay the learning rate based on schedule"""
     cur_lr = init_lr * 0.5 * (1. + math.cos(math.pi * epoch / epochs))
@@ -73,6 +59,17 @@ def train(train_loader, model, criterion, optimizer):
 
 def warm_up_cpc(simsiam, img_buffer, epoch=0, warm_up_episode=5000, writer=None):
     assert len(img_buffer) > batch_size
+
+    augmentation = [
+        to_tensor,
+        transforms.RandomApply([transforms.GaussianBlur(3, [.1, 2.])], p=0.5),
+        transforms.RandomResizedCrop((2, 160), scale=(0.2, 1.)),
+        transforms.Normalize(mean=[0.445], std=[0.227]),
+    ]
+    # if simsiam.encoder.in_channels == 3:
+    #     augmentation += [transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
+    #                      transforms.RandomGrayscale(p=0.2)]
+
     train_dataset = FrameDataset(img_buffer, TwoCropsTransform(transforms.Compose(augmentation)))
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 
@@ -115,10 +112,10 @@ def warm_up_process(simsiam, img_buffer, warm_up_epoch, warm_up_episode, writer,
 if __name__ == "__main__":
     state_dim = 256
     pred_dim = 64
-    encoder = ResEncoder(in_channels=1, out_dims=state_dim).cuda()
+    encoder = ResEncoder(in_channels=3, out_dims=state_dim).cuda()
     simsiam = SimSiam(encoder, state_dim, pred_dim).cuda()
     img_buffer = Buffer(_length=1, _max_replay_buffer_size=3000)
-    for i in range(50):
-        img_buffer.append(np.ones((80, 160)))
+    for i in range(500):
+        img_buffer.append(np.ones((3, 80, 160)))
 
     warm_up_cpc(simsiam, img_buffer)
