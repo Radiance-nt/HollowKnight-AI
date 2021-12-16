@@ -1,5 +1,7 @@
 # Readme
-> I am keeping upgrading this, so the code may change everyday.
+> Many environment interaction settings are acquired from [DQN_HollowKnight](https://github.com/ailec0623/DQN_HollowKnight). Many Thanks to its author!
+> I have rebased the structrue of the whole trainning procedure, mentioned by deleting the mannually designed action pairs, designing a contrastive representation learning for RL and so on. 
+> In the future, I will try model-based RL methods, or even imitation learning from human playing experience...
 
 ## Environment
 
@@ -20,48 +22,4 @@
                                          If you have any idea about sending keyboard event in the background, please let me know)
 - Let the little knight stand in front of the statue of the boss in the godhome
 - Press `F1` to start trainning. (Also you can use `F1` to stop trainning)
-
-
-## Code structure
-- Most training configuration is in `train.py`
-- `Agent.py` gets output actions from our model
-- `DQN.py` is the learning algorithm
-- `Model.py` defines the model we use
-- `ReplayMemory.py` defines the experience pool for learning
-- `test.py` is useless, I use it to test basic functions and fix bugs
-
-- Files in `./Tool` are for other functions we may use
-- `Actions` defines actions for little knight and restart game script
-- `GetHp` help us get our hp, boss hp, soul and location(it may have some bugs, you can fix it by yourself)
-- `SendKey` is the API we use to send keyboard event to windows system.
-- `UserInput` is an useless file, which I used it to train my model manually.
-- `WindowsAPI` is used to get screenshot of the game, and `key_check()` is used to check which key is pressed.
-- `Helper` defines [Reward Jugment] fucntion, and other functions we may use
-
-## Changes
-
-- Add delay reward of an action
-
-- Make the mdoel output an action sequence
-
-- Use two models to output actions. One is for moving and the other is for attack/jump/skill
-
-- Apply RESNET
-
-- Add LSTM layers
-
-- Merge a part of action model and move model
-
-- Remvoe LSTM layers
-
-- No more Q value, reward is enough, Q value is too complex to learn.
-
-- Use kernel32 to read player Hp and hornet Hp.
-
-- Use different criteria to evaluate move and actions.
-
-- Do not use skill without souls
-
-- Use more precise scoring standards
-
 
