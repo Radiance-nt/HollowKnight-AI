@@ -1,6 +1,8 @@
 # Readme
 > Many environment interaction settings are acquired from [DQN_HollowKnight](https://github.com/ailec0623/DQN_HollowKnight). Many Thanks to its author!
+
 > I have rebased the structrue of the whole trainning procedure, mentioned by deleting the mannually designed action pairs, designing a contrastive representation learning for RL and so on. 
+
 > In the future, I will try model-based RL methods, or even imitation learning from human playing experience...
 
 ## Environment
